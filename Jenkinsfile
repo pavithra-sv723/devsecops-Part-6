@@ -85,7 +85,7 @@ pipeline {
                 echo "Parsing ZAP report for medium vulnerabilities..."
                 script {
                     def vulnerabilities = sh(
-                        script: "python3 scripts/parse_zap_report.py ${ZAP_REPORT}",
+                        script: "python3 parse_zap_report.py ${ZAP_REPORT}",
                         returnStdout: true
                     ).trim()
 
