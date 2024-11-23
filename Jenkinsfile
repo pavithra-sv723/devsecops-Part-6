@@ -70,7 +70,7 @@ pipeline {
                                         URL: ${vuln.url}
                                         Description: ${vuln.description}
                                     """,
-                                    issuetype: [name: 'Bug'], 
+                                    issuetype: [name: 'Task'], 
                                     assignee: [username: 'Pavithra']
                                 ]
                             ]
