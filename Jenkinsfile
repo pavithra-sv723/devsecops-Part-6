@@ -79,7 +79,11 @@ pipeline {
                 }
             }
         }
-
+        stage('Install Dependencies') {
+            steps {
+                sh 'pip3 install beautifulsoup4'
+            }
+        }
         stage('Parse ZAP Report') {
             steps {
                 echo "Parsing ZAP report for medium vulnerabilities..."
