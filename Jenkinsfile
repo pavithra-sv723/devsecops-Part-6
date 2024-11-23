@@ -86,7 +86,6 @@ pipeline {
             }
         }
     }
-}
 
 // Helper function to parse ZAP report and extract vulnerabilities
 def parseZapReport(reportContent) {
