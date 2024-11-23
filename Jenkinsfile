@@ -49,7 +49,7 @@ pipeline {
 	   
 	stage ('wait_for_testing'){
 	   steps {
-		   sh 'pwd; sleep 180; echo "Application has been deployed on K8S"'
+		   sh 'pwd; sleep 10; echo "Application has been deployed on K8S"'
 	   	}
 	   }
 	   
