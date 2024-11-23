@@ -31,7 +31,10 @@ pipeline {
         stage('Push') {
             steps {
                 script {
-                    docker.withRegistry('https://535002889690.dkr.ecr.us-east-2.amazonaws.com', 'ecr:us-east-2:aws-credentials') {
+			sh """
+                aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 535002889690.dkr.ecr.us-east-2.amazonaws.com
+            """
+                    docker.withRegistry('https://535002889690.dkr.ecr.us-east-2.amazonaws.com', '') {
                         app.push("latest")
                     }
                 }
