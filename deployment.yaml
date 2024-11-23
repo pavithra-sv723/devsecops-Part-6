@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: easybuggy-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: easybuggy
+  template:
+    metadata:
+      labels:
+        app: easybuggy
+    spec:
+      containers:
+      - name: easybuggy
+        image: 975050243542.dkr.ecr.us-east-2.amazonaws.com/myimg
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+# service type loadbalancer       
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: easybuggy
+    k8s-app: easybuggy
+  name: easybuggy
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 8080
+  type: LoadBalancer
+  selector:
+    app: easybuggy
