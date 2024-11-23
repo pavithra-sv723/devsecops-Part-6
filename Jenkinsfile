@@ -75,7 +75,7 @@ pipeline {
                                         Description: ${vuln.description}
                                     """,
                                     issuetype: [name: 'Bug'], 
-                                    assignee: [username: 'Lavanya Pidikiti']
+                                    assignee: [username: 'Pavithra']
                                 ]
                             ]
                             def response = jiraNewIssue(issue: testIssue, site: jiraServer)
