@@ -4,9 +4,11 @@ pipeline {
         maven 'Maven_3_2_5'
     }
     environment {
-        ZAP_REPORT = "/var/lib/jenkins/workspace/pavithra_devsecops-2/zap_report.html" // Path to the ZAP report
-        JIRA_CREDENTIALS_ID = "jira"    // Jenkins credentials ID for JIRA
-        JIRA_PROJECT_KEY = "DEV-1"      // JIRA project key
+        SONARQUBE_URL = 'https://sonarcloud.io/project/overview?id=pavithra-devops_devsecops'
+        SONARQUBE_TOKEN = '768ee2edc76f25fa11240f65b225527718b02f30'
+        JIRA_URL = 'https://devsync.atlassian.net/jira/software/projects/DEV/boards/2'
+        JIRA_USER = 'Pavithra'
+        JIRA_API_TOKEN = 'ATCTT3xFfGN0H-n0va10BPiOWLQ-tdnhhOZ6UZYNM68hcACB4XLvmuy6qwP1aRHHMZTf2R3m9rwPbcndp3f7AyJfn_3RwNICoKU-cgFqQqGoZnXx5e69Sl_RgVHOa38138mSoeMNc94W4-kRx25PDVX86SgsWgQICiEQeX6HcH_joC67Nb6OlZs=50F87329'
     }
     stages {
         stage('Compile and Run Sonar Analysis') {
@@ -21,6 +23,62 @@ pipeline {
             }
         }
 
+        pipeline {
+    agent any
+    
+    environment {
+        SONARQUBE_URL = 'http://your-sonarqube-server'
+        SONARQUBE_TOKEN = 'your-sonarqube-token'
+        JIRA_URL = 'http://your-jira-server'
+        JIRA_USER = 'your-jira-username'
+        JIRA_API_TOKEN = 'your-jira-api-token'
+    }
+    
+    stages {
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    // Trigger SonarQube analysis
+                    withSonarQubeEnv('SonarQube') {
+                        sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=your-project-key'
+                    }
+                }
+            }
+        }
+        
+        stage('Check SonarQube Issues') {
+            steps {
+                script {
+                    // Fetch issues from SonarQube
+                    def sonarIssues = sh(script: "curl -s -u ${SONARQUBE_TOKEN}: ${SONARQUBE_URL}/api/issues/search?severity=CRITICAL&componentKeys=your-project-key", returnStdout: true).trim()
+
+                    // Check if any critical issues exist
+                    if (sonarIssues.contains('\"total\":0')) {
+                        echo 'No critical issues found.'
+                    } else {
+                        echo 'Critical issues detected.'
+                        sendJiraNotification(sonarIssues)
+                    }
+                }
+            }
+        }
+    }
+}
+
+    def sendJiraNotification(issues) {
+        // Construct the Jira issue creation payload based on the detected issues
+        def issueSummary = "Critical issues found in SonarQube"
+        def issueDescription = "The following critical issues were detected: ${issues}"
+    
+        def response = sh(script: """
+            curl -u ${JIRA_USER}:${JIRA_API_TOKEN} -X POST \
+            --data '{"fields": {"project": {"key": "YOUR_PROJECT_KEY"}, "summary": "${issueSummary}", "description": "${issueDescription}", "issuetype": {"name": "Bug"}}}' \
+            -H "Content-Type: application/json" ${JIRA_URL}/rest/api/2/issue/
+        """, returnStdout: true).trim()
+    
+        echo "Jira issue created: ${response}"
+    }
+        
         stage('Run SCA Analysis Using Snyk') {
             steps {
                 withCredentials([string(credentialsId: 'SNYK_TOKEN', variable: 'SNYK_TOKEN')]) {
@@ -76,65 +134,6 @@ pipeline {
                         -quickprogress -quickout ${WORKSPACE}/zap_report.html
                     '''
                     archiveArtifacts artifacts: 'zap_report.html'
-                }
-            }
-        }
-        stage('Install Dependencies') {
-            steps {
-                sh 'pip3 install beautifulsoup4'
-            }
-        }
-        stage('Parse ZAP Report') {
-            steps {
-                echo "Parsing ZAP report for medium vulnerabilities..."
-                script {
-                    def vulnerabilities = sh(
-                        script: "python3 parse_zap_report.py ${ZAP_REPORT}",
-                        returnStdout: true
-                    ).trim()
-
-                    if (vulnerabilities) {
-                        echo "Medium vulnerabilities found:"
-                        echo vulnerabilities
-                        currentBuild.description = "Medium vulnerabilities found in ZAP scan"
-                        currentBuild.result = 'UNSTABLE'
-
-                        // Save the vulnerabilities for the next stage
-                        env.MEDIUM_VULNERABILITIES = vulnerabilities
-                    } else {
-                        echo "No Medium vulnerabilities found."
-                        currentBuild.description = "No Medium vulnerabilities found"
-                    }
-                }
-            }
-        }
-
-        stage('Create JIRA Ticket') {
-            when {
-                expression {
-                    return env.MEDIUM_VULNERABILITIES != null
-                }
-            }
-            steps {
-                echo "Creating JIRA ticket for medium vulnerabilities..."
-                withCredentials([usernamePassword(
-                    credentialsId: env.JIRA_CREDENTIALS_ID, 
-                    usernameVariable: 'JIRA_USER', 
-                    passwordVariable: 'JIRA_PASS'
-                )]) {
-                    sh """
-                        curl -u $JIRA_USER:$JIRA_PASS \
-                            -X POST \
-                            -H "Content-Type: application/json" \
-                            --data '{
-                                "fields": {
-                                    "project": { "key": "${JIRA_PROJECT_KEY}" },
-                                    "summary": "Medium Vulnerabilities Found in OWASP ZAP Scan",
-                                    "description": "${env.MEDIUM_VULNERABILITIES}",
-                                    "issuetype": { "name": "Bug" }
-                                }
-                            }' https://your-jira-instance/rest/api/2/issue/
-                    """
                 }
             }
         }
