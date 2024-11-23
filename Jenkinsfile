@@ -6,7 +6,7 @@ pipeline {
    stages{
     stage('CompileandRunSonarAnalysis') {
             steps {	
-		sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=devsecops-buggyapp_testing -Dsonar.organization=devsecops-buggyapp -Dsonar.host.url=https://sonarcloud.io -Dsonar.token=4ac72bc77db33f644f2e03f1f871a3c8f2417fa2'
+		sh 'mvn clean verify sonar:sonar -Dsonar.projectKey=pavithra-devops_devsecops -Dsonar.organization=pavithra-devops -Dsonar.host.url=https://sonarcloud.io -Dsonar.token=768ee2edc76f25fa11240f65b225527718b02f30'
 			}
     }
 
@@ -22,7 +22,7 @@ pipeline {
             steps { 
                withDockerRegistry([credentialsId: "dockerlogin", url: ""]) {
                  script{
-                 app =  docker.build("myimg")
+                 app =  docker.build("pavi_img")
                  }
                }
             }
